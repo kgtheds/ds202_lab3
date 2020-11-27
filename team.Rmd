@@ -1,28 +1,102 @@
 ---
 title: "team"
+author: "Kedell Guevara"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(tidyverse)
+install.packages('readxl')
+dat <- readxl::read_xls('GSS.xls')
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+rename(dat, Year=GSS_year)
 ```
 
-## Including Plots
+1)
 
-You can also embed plots, for example:
+Patterns: Political party affiliation does not seem to affect average years in school although persons who say that they don't know have a lower than average time spent in school.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+
+dat <- dat %>% drop_na()
+  
+dat$Highest_grade <- as.numeric(dat$Highest_grade) 
+
+dat%>%group_by(Political)%>%summarise(mean(Highest_grade))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+2)
+
+
+```{r}
+#Could not overcome error
+
+colnames(dat)
+
+dat%>%group_by(Political)%>%summarise(median(Highest_grade))
+
+
+dat_educ = stack(dat%>%filter(Political=="Don't know",Highest_grade > 11), dat%>%filter(Political=="Ind,near dem",Highest_grade > 13),dat%>%filter(Political=="Ind, near rep",Highest_grade > 13),dat%>%filter(Political=="Independent",Highest_grade > 12),dat%>%filter(Political=="No answer",Highest_grade > 12),dat%>%filter(Political=="Not str democrat",Highest_grade > 12),dat%>%filter(Political=="Not str republican",Highest_grade > 13), dat%>%filter(Political=="Other party",Highest_grade > 13), dat%>%filter(Political=="Strong democrat",Highest_grade > 12), dat%>%filter(Political=="Strong republican",Highest_grade > 13))
+```
+
+
+3)
+
+The proportion of happy persons seem almost equal across all of the categories of marital status. Thus, marriage does not seem to affect happiness on its own and should be considered in the presence of other factors. It should be noted that while the proportion of "happiness" is almost equal, there is disproportionate amounts of "very happy" people in the married section.
+```{r}
+
+dat%>%group_by(Marital,Happiness)%>%summarise(count = n())
+
+
+
+ggplot(dat, aes(x=Marital,fill=Happiness)) + geom_bar()
+
+
+```
+4)
+
+Political party does not seem to affect the distribution of happy people based on marital status. Although, persons who state they don't know their political affiliation seem to have most of the happy people either being married or divorced.
+```{r}
+dat%>%group_by(Marital,Happiness, Political)%>%summarise(count = n())
+
+
+ggplot(dat, aes(x=Marital,fill=Happiness)) + geom_bar() + facet_wrap(~Political, scales = "free_y")
+```
+
+5)
+
+Using the mean, we observe that on average, persons who are divorced, never married or gave no answer are more educated than those who are married have separated or are widowed. No answer respondents make up the highest educated group whereas separated and widowed persons make up the lowest of the group. Using the graph, it seems that grade 12 is the most popular grade among respondents. Across all grade groups though, it seems that all groups are fairly similarly represented and that marital status is not having a drastic effect.
+
+```{r}
+dat%>%group_by(Marital)%>%summarise(mean_educ = mean(Highest_grade))
+
+ggplot(dat, aes(x=factor(Highest_grade), fill=Marital)) + geom_bar()
+
+```
+6a)
+Is there a connection between happiness and highest grade?
+
+Using the boxplot and the summarise function, people who are very happy/pretty happy have higher average highest grade than those who are not too happy or don't know. Not applicable persons have the highest mean but it is unclear what this implies. There seems to be however an effect on happiness attributed to higher education.
+```{r}
+
+dat%>%group_by(Happiness)%>%summarise(mean(Highest_grade))
+
+
+ggplot(dat, aes(x=Highest_grade)) + geom_boxplot() + facet_grid(~ Happiness)
+
+```
+
+6b)
+
+Is there a difference in education level between boys and girls?
+
+Boys seem to have a 75th quantile bigger than girls but this seems to be the only significant difference. Based on this data and on the grades used, it seems that girls and boys both have equal chances when it comes to passing certain grades.
+```{r}
+
+ggplot(dat, aes(x=Highest_grade)) + geom_boxplot() + facet_wrap( ~Sex)
+
+```
+
